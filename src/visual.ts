@@ -45,160 +45,43 @@ export class Visual implements IVisual {
         this.host = options.host;
         this.formattingSettingsService = new FormattingSettingsService();
         this.target = options.element;
+
+
         this.dateRangeInput = document.createElement('input');
         this.dateRangeInput.type = 'text';
         this.dateRangeInput.id = 'dateRangeInput';
         this.dateRangeInput.readOnly = true;
-        // Remove old content
-        this.target.innerHTML = '';
+      
 
-        // Container for date range picker
-        const container = document.createElement('div');
-        container.className = 'custom-date-range-container';
-
-        // Start date input
-        const startInput = document.createElement('input');
-        startInput.type = 'text';
-        startInput.className = 'date-range-input start-date';
-        startInput.readOnly = true;
-        // End date input
-        const endInput = document.createElement('input');
-        endInput.type = 'text';
-        endInput.className = 'date-range-input end-date';
-        endInput.readOnly = true;
-
-        // Set initial values
-        const now = new Date();
-        startInput.value = now.toLocaleDateString();
-        endInput.value = now.toLocaleDateString();
 
         // Open dialog on click
-        const openDialog = () => {
-            const [start, end] = [startInput.value, endInput.value].map(d => new Date(d));
+        this.dateRangeInput.onclick = () => {
+            // Parse value in format mm/dd/yyyy - mm/dd/yyyy
+            const value = this.dateRangeInput.value || '';
+            const [startStr, endStr] = value.split(' - ').map(s => s.trim());
+            function parseMDY(str: string) {
+                const [month, day, year] = str.split('/').map(Number);
+                return new Date(year, month - 1, day);
+            }
+            const start = startStr ? parseMDY(startStr) : new Date();
+            const end = endStr ? parseMDY(endStr) : start;
+
+            
+            console.log("Opening dialog with start:", start, "end:", end);
+
             const initialDialogState = { startDate: start.toISOString(), endDate: end.toISOString() };
             this.host.openModalDialog(
                 DatePickerDialog.id,
                 { actionButtons: [DialogAction.OK, DialogAction.Cancel], size: { width: 800, height: 440 }, position: { type: 0, left: 0, top: 0 }, title: "Date Range" },
                 { initialDialogState, defaultTime: { start: this.startDefaultTime, end: this.endDefaultTime } }
             )
-                .then(ret => this.handleDialogResult(ret, startInput, endInput))
-                .catch(error => this.handleDialogError(error, startInput));
+                .then(ret => this.handleDialogResult(ret, this.dateRangeInput))
+                .catch(error => this.handleDialogError(error, null));
         };
-        startInput.onclick = openDialog;
-        endInput.onclick = openDialog;
+ 
 
-        // Inputs row
-        const inputsRow = document.createElement('div');
-        inputsRow.className = 'inputs-row';
-        inputsRow.appendChild(startInput);
-        inputsRow.appendChild(endInput);
-        container.appendChild(inputsRow);
-
-        // --- Range slider logic ---
-        let minDate = now, maxDate = now;
-        if (this.startDefaultTime && this.endDefaultTime) {
-            minDate = this.startDefaultTime;
-            maxDate = this.endDefaultTime;
-        }
-        let startDate = minDate;
-        let endDate = maxDate;
-        startInput.value = startDate.toLocaleDateString();
-        endInput.value = endDate.toLocaleDateString();
-
-        // Helper: date <-> percent
-        const dateToPercent = (date: Date) => {
-            return ((date.getTime() - minDate.getTime()) / (maxDate.getTime() - minDate.getTime())) * 100;
-        };
-        const percentToDate = (percent: number) => {
-            const t = minDate.getTime() + (percent / 100) * (maxDate.getTime() - minDate.getTime());
-            return new Date(Math.round(t));
-        };
-
-        // Slider handles
-        const sliderRow = document.createElement('div');
-        sliderRow.className = 'slider-row';
-        const sliderTrack = document.createElement('div');
-        sliderTrack.className = 'slider-track';
-        const leftHandle = document.createElement('div');
-        leftHandle.className = 'slider-handle left';
-        const rightHandle = document.createElement('div');
-        rightHandle.className = 'slider-handle right';
-        sliderRow.appendChild(sliderTrack);
-        sliderRow.appendChild(leftHandle);
-        sliderRow.appendChild(rightHandle);
-        container.appendChild(sliderRow);
-
-        // Set initial handle positions
-        const updateHandles = () => {
-            const leftPercent = dateToPercent(startDate);
-            const rightPercent = dateToPercent(endDate);
-            leftHandle.style.left = `calc(${leftPercent}% - 12px)`;
-            rightHandle.style.left = `calc(${rightPercent}% - 12px)`;
-        };
-        updateHandles();
-
-        // Drag logic
-        let dragging: 'left' | 'right' | null = null;
-        let sliderRect: DOMRect;
-        const onMouseMove = (e: MouseEvent) => {
-            if (!dragging) return;
-            const x = e.clientX - sliderRect.left;
-            const percent = Math.max(0, Math.min(100, (x / sliderRect.width) * 100));
-            if (dragging === 'left') {
-                const newStart = percentToDate(percent);
-                if (newStart < endDate) {
-                    startDate = newStart;
-                    startInput.value = startDate.toLocaleDateString();
-                    updateHandles();
-                }
-            } else {
-                const newEnd = percentToDate(percent);
-                if (newEnd > startDate) {
-                    endDate = newEnd;
-                    endInput.value = endDate.toLocaleDateString();
-                    updateHandles();
-                }
-            }
-        };
-        const onMouseUp = () => {
-            if (dragging) {
-                this.applyDateRangeFilter({ start: startDate, end: endDate });
-            }
-            dragging = null;
-            window.removeEventListener('mousemove', onMouseMove);
-            window.removeEventListener('mouseup', onMouseUp);
-        };
-        leftHandle.onmousedown = (e) => {
-            dragging = 'left';
-            sliderRect = sliderRow.getBoundingClientRect();
-            window.addEventListener('mousemove', onMouseMove);
-            window.addEventListener('mouseup', onMouseUp);
-            e.preventDefault();
-        };
-        rightHandle.onmousedown = (e) => {
-            dragging = 'right';
-            sliderRect = sliderRow.getBoundingClientRect();
-            window.addEventListener('mousemove', onMouseMove);
-            window.addEventListener('mouseup', onMouseUp);
-            e.preventDefault();
-        };
-
-        // Update slider if dialog changes
-        this.handleDialogResult = (result: any, startInput: HTMLInputElement, endInput: HTMLInputElement) => {
-            if (result.actionId === DialogAction.OK) {
-                const { start, end } = result.resultState;
-                const s = new Date(start), e = new Date(end ?? start);
-                startDate = s;
-                endDate = e;
-                startInput.value = s.toLocaleDateString();
-                endInput.value = e.toLocaleDateString();
-                updateHandles();
-                this.applyDateRangeFilter({ start: s, end: e });
-            }
-        };
-
-        this.target.appendChild(container);
-        this.dateRangeInput = startInput; // For compatibility
+        this.target.appendChild(this.dateRangeInput);
+   
     }
 
     public update(options: VisualUpdateOptions) {
@@ -231,14 +114,18 @@ export class Visual implements IVisual {
 
     public destroy(): void { }
 
-    private handleDialogResult(result: any, startInput: HTMLInputElement, endInput: HTMLInputElement) {
+    private handleDialogResult(result: any, Input: HTMLInputElement) {
         if (result.actionId === DialogAction.OK) {
             const { start, end } = result.resultState;
             const s = new Date(start), e = new Date(end ?? start);
             const fmt = (d: Date) => `${(d.getUTCMonth() + 1).toString().padStart(2, '0')}/${d.getUTCDate().toString().padStart(2, '0')}/${d.getUTCFullYear()}`;
-            startInput.value = fmt(s);
-            endInput.value = fmt(e);
+            
+            Input.value = `${fmt(s)} - ${fmt(e)}`;
+            if (result.resultState?.reset) {
+                this.applyResetFilter();
+            }else {
             this.applyDateRangeFilter({ start: s, end: e });
+            }
         }
     }
 
