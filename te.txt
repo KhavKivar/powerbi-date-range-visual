@@ -1,0 +1,26 @@
+-- Drop the sales table if it already exists to ensure a clean slate
+IF OBJECT_ID('sales', 'U') IS NOT NULL
+    DROP TABLE sales;
+
+-- Create the sales table
+CREATE TABLE sales (
+    sale_id INT IDENTITY(1,1) PRIMARY KEY, -- IDENTITY(1,1) for auto-incrementing ID
+    product_id INT NOT NULL,
+    sale_amount DECIMAL(10, 2) NOT NULL,
+    quantity INT NOT NULL,
+    order_date DATE NOT NULL
+);
+
+-- Insert some sample data into the sales table
+-- Dates are calculated relative to today for dynamic generation
+INSERT INTO sales (product_id, sale_amount, quantity, order_date) VALUES
+(101, 150.75, 2, GETDATE()), -- Order for today (GETDATE() includes time, CAST to DATE if needed)
+(102, 29.99, 5, DATEADD(day, -5, GETDATE())),
+(103, 500.00, 1, DATEADD(day, -15, GETDATE())),
+(104, 10.50, 10, DATEADD(day, -30, GETDATE())),
+(105, 250.00, 3, DATEADD(day, -45, GETDATE())),
+(106, 75.20, 4, DATEADD(day, -60, GETDATE())),
+(107, 120.00, 2, DATEADD(day, -75, GETDATE())),
+(108, 45.00, 6, DATEADD(day, -89, GETDATE())), -- Close to 90 days ago
+(109, 99.99, 1, DATEADD(day, -10, GETDATE())),
+(110, 300.00, 2, DATEADD(day, -25, GETDATE()));
