@@ -1,10 +1,10 @@
 {
-  "name": "visual",
-  "description": "default_template_value",
+  "name": "powerbi-date-range-visual",
+  "description": "Custom Power BI visual for selecting and applying date ranges",
   "version": "1.0.0.0",
   "repository": {
-    "type": "default_template_value",
-    "url": "default_template_value"
+    "type": "git",
+    "url": "https://github.com/KhavKivar/powerbi-date-range-visual.git"
   },
   "license": "MIT",
   "scripts": {
@@ -24,6 +24,8 @@
     "@typescript-eslint/eslint-plugin": "^8.8.0",
     "eslint": "^9.11.1",
     "eslint-plugin-powerbi-visuals": "^1.0.0",
+    "powerbi-visuals-tools": "^7.2.1",
+    "ts-loader": "^9.5.4",
     "typescript": "5.5.4"
   }
 }

@@ -137,7 +137,7 @@ export class DateRangePicker {
         // Prev button
         const prevButton = document.createElement('button');
         prevButton.className = 'nav-button prev';
-        prevButton.innerHTML = '&#10094;';
+        prevButton.textContent = '\u276e';
         prevButton.title = 'Previous Month';
         prevButton.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -186,7 +186,7 @@ export class DateRangePicker {
         // Next button
         const nextButton = document.createElement('button');
         nextButton.className = 'nav-button next';
-        nextButton.innerHTML = '&#10095;';
+        nextButton.textContent = '\u276f';
         nextButton.title = 'Next Month';
         nextButton.addEventListener('click', (e) => {
             e.stopPropagation();

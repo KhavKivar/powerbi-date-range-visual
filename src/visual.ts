@@ -143,7 +143,7 @@ export class Visual implements IVisual {
         const start = dateInterval.start ? new Date(dateInterval.start) : new Date();
         const end = dateInterval.end ? new Date(dateInterval.end) : start;
         const filter: IAdvancedFilter = {
-            $schema: "http://powerbi.com/product/schema#advanced",
+            $schema: "https://powerbi.com/product/schema#advanced",
             target,
             logicalOperator: "And",
             conditions: [
